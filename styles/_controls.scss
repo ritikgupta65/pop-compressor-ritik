@@ -1,0 +1,41 @@
+@use 'variables' as *;
+
+/* ───────────── controls ───────────── */
+.strip{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;flex:0 0 auto;padding:8px 16px;
+  border-bottom:1px solid var(--line);background:var(--surface);
+
+  @include mobile{
+    gap:12px;padding:8px 12px;overflow-x:auto;
+    .hint{display:none}
+  }
+}
+
+.ctl{
+  display:flex;align-items:center;gap:8px;
+
+  label{@include label-caps(11px)}
+  output{font-family:var(--mono);font-size:12px;min-width:96px;color:var(--accent);font-variant-numeric:tabular-nums}
+  &.narrow output{min-width:40px;text-align:right}
+}
+
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:112px;height:2px;background:var(--line);border-radius:2px;cursor:pointer;
+
+  &::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border:0;border-radius:50%;background:var(--accent);transition:transform var(--t-fast) var(--ease)}
+  &:active::-webkit-slider-thumb{transform:scale(1.2)}
+  &::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:var(--accent)}
+  &:focus-visible{box-shadow:none}
+  &:focus-visible::-webkit-slider-thumb{box-shadow:var(--focus-ring)}
+  &:focus-visible::-moz-range-thumb{box-shadow:var(--focus-ring)}
+}
+
+select{
+  background:var(--raised);color:var(--text);border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:4px 8px;font-family:var(--ui);font-size:12px;
+  transition:border-color var(--t-fast) var(--ease);
+  &:hover{border-color:var(--line-strong)}
+  &:focus-visible{border-color:var(--accent);box-shadow:var(--focus-ring)}
+}
+
+.warn{flex:0 0 auto;padding:8px 16px;background:red-a(.09);border-bottom:1px solid red-a(.25);font-size:12px;color:var(--red)}

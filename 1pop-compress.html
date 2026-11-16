@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>POP · Compress</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ── the one accent. change this line, the whole tool follows ── */
+  --accent:#FFB020;
+  --accent-ink:#1A1200;
+  --accent-15:rgba(255,176,32,.15);
+  --accent-30:rgba(255,176,32,.32);
+
+  --bg:#0B0C0E; --surface:#14161A; --raised:#1B1E24; --line:#262A31;
+  --text:#E8EAED; --muted:#8A929E; --dim:#5C6470; --red:#FF6B5E;
+  --r:11px;
+  --ease:cubic-bezier(.22,.85,.2,1);
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --ui:'Space Grotesk',system-ui,-apple-system,Segoe UI,sans-serif;
+}
+*{box-sizing:border-box}
+html{height:100%}
+body{
+  margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:var(--ui);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;
+}
+button{font-family:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+#fx{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:0;transition:opacity .18s}
+
+/* ───────────── header ───────────── */
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:0 0 auto;padding:11px 16px;border-bottom:1px solid var(--line);background:var(--surface)}
+.brand{display:flex;align-items:baseline;gap:8px;margin-right:auto}
+.brand b{font-weight:700;font-size:16px;letter-spacing:-.02em}
+.brand b em{font-style:normal;color:var(--accent)}
+.brand span{font-family:var(--mono);font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.14em}
+.seg{display:flex;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:2px}
+.seg button{
+  background:none;border:0;padding:6px 10px;border-radius:6px;color:var(--muted);
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.seg button[aria-pressed=true]{background:var(--accent-15);color:var(--accent)}
+.seg.views button{padding:6px 8px;display:grid;place-items:center}
+.seg.views svg{width:14px;height:14px;display:block;fill:currentColor}
+.btn{
+  border:1px solid var(--line);background:var(--raised);border-radius:8px;padding:8px 13px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;
+  transition:border-color .18s var(--ease),color .18s var(--ease),transform .12s var(--ease);
+}
+.btn:hover:not(:disabled){border-color:var(--accent-30);color:var(--accent)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.primary:hover:not(:disabled){filter:brightness(1.09);color:var(--accent-ink)}
+.btn.ghost{background:none}
+.count{display:inline-block;margin-left:6px;padding:0 5px;border-radius:4px;background:rgba(0,0,0,.18);font-weight:700}
+.btn:not(.primary) .count{background:var(--line)}
+
+/* ───────────── controls ───────────── */
+.strip{display:flex;align-items:center;gap:16px;flex-wrap:wrap;flex:0 0 auto;padding:9px 16px;border-bottom:1px solid var(--line)}
+.ctl{display:flex;align-items:center;gap:9px}
+.ctl label{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
+.ctl output{font-family:var(--mono);font-size:11.5px;min-width:96px;color:var(--accent)}
+.ctl.narrow output{min-width:40px;text-align:right}
+input[type=range]{-webkit-appearance:none;appearance:none;width:112px;height:2px;background:var(--line);border-radius:2px;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border:0;border-radius:50%;background:var(--accent);transition:transform .15s var(--ease)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.25)}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border:0;border-radius:50%;background:var(--accent)}
+select{background:var(--raised);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-family:var(--mono);font-size:11px}
+.hint{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.05em}
+.warn{flex:0 0 auto;padding:7px 16px;background:rgba(255,107,94,.09);border-bottom:1px solid rgba(255,107,94,.25);font-family:var(--mono);font-size:10.5px;color:var(--red)}
+
+/* ───────────── savings header ───────────── */
+.totals{flex:0 0 auto;display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.big{display:flex;align-items:baseline;gap:8px;min-width:132px}
+.big b{font-family:var(--mono);font-weight:700;font-size:34px;line-height:1;letter-spacing:-.03em;color:var(--accent);font-variant-numeric:tabular-nums}
+.big i{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);max-width:58px}
+.flow{display:flex;flex-direction:column;gap:6px;flex:1;min-width:210px}
+.flow .nums{display:flex;align-items:baseline;gap:8px;font-family:var(--mono);font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+.flow .nums b{color:var(--text);font-weight:500}
+.flow .nums u{text-decoration:none;color:var(--accent)}
+.flow .nums .count-txt{margin-left:auto}
+.track{position:relative;height:7px;border-radius:4px;background:var(--raised);overflow:hidden;border:1px solid var(--line)}
+.track i{position:absolute;inset:0 auto 0 0;background:var(--accent);width:0;transition:width .45s var(--ease)}
+.track u{position:absolute;top:0;bottom:0;width:1px;background:var(--bg);opacity:.55}
+
+/* ───────────── work area ───────────── */
+main{flex:1 1 auto;min-height:0;overflow:auto;position:relative;display:flex;flex-direction:column;padding:14px}
+.empty{
+  flex:1 1 auto;display:grid;place-content:center;justify-items:center;text-align:center;
+  border:1px dashed var(--line);border-radius:16px;padding:32px 22px;gap:12px;
+  transition:border-color .25s var(--ease),background .25s var(--ease);
+  background:radial-gradient(ellipse at 50% 0%,rgba(255,176,32,.05),transparent 62%)
+}
+body.dragging .empty{border-color:var(--accent-30);background:radial-gradient(ellipse at 50% 40%,rgba(255,176,32,.07),transparent 70%)}
+body.dragging main{outline:1px dashed var(--accent-30);outline-offset:-6px;border-radius:16px}
+.empty h1{margin:0;font-size:clamp(19px,3.4vw,30px);font-weight:500;letter-spacing:-.025em;max-width:16ch;line-height:1.15}
+.empty h1 em{font-style:normal;color:var(--accent)}
+.empty p{margin:0;color:var(--muted);max-width:48ch}
+
+/* ---- grid view ---- */
+#grid.grid{display:grid;gap:11px;align-content:start;grid-template-columns:repeat(auto-fill,minmax(min(100%,225px),1fr))}
+/* ---- list view ---- */
+#grid.list{display:flex;flex-direction:column;gap:7px}
+
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+  display:flex;flex-direction:column;
+  transition:border-color .2s var(--ease),transform .2s var(--ease),box-shadow .2s var(--ease);
+}
+.card.in{animation:pop .34s var(--ease) both}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+.card:hover{border-color:#333a45;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.28)}
+.card.working{border-color:var(--accent-30)}
+.shot{
+  position:relative;aspect-ratio:4/3;width:100%;padding:0;border:0;cursor:zoom-in;display:grid;place-items:center;
+  background:conic-gradient(from 90deg at 50% 50%,#1a1d22 25%,#15181c 0 50%,#1a1d22 0 75%,#15181c 0);
+  background-size:15px 15px;overflow:hidden;
+}
+.shot img{max-width:100%;max-height:100%;display:block;transition:transform .35s var(--ease)}
+.card:hover .shot img{transform:scale(1.035)}
+.chip{
+  position:absolute;top:7px;right:7px;padding:4px 8px;border-radius:7px;
+  font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:10px;
+  letter-spacing:.06em;text-transform:uppercase;
+  background:rgba(11,12,14,.86);border:1px solid var(--line);color:var(--muted);
+  animation:chipIn .28s var(--ease) both;
+}
+@keyframes chipIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+.chip.done{border-color:var(--accent-30);color:var(--accent)}
+.chip.done b{font-size:15px;font-weight:700;letter-spacing:-.02em;text-transform:none}
+.chip.err{border-color:rgba(255,107,94,.4);color:var(--red)}
+.chip.work{border-color:var(--accent-30);color:var(--accent)}
+.chip.work b{animation:blink 1.1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.35}}
+
+.meta{padding:9px 10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px;flex:1}
+.name{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sizes{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.sizes s{text-decoration:line-through}
+.sizes b{color:var(--text);font-weight:500}
+.sizes em{font-style:normal;color:var(--accent)}
+.sizes .q{margin-left:auto;padding:1px 5px;border:1px solid var(--line);border-radius:4px;font-size:9.5px;color:var(--muted)}
+.bar{height:5px;border-radius:3px;background:var(--raised);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:100%;background:var(--accent);transition:width .45s var(--ease)}
+.bar.idle i{background:var(--line)}
+/* the inline knob — no expanding needed to tune a file */
+.knob{display:flex;align-items:center;gap:8px}
+.knob label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.knob input[type=range]{flex:1;width:auto;min-width:40px}
+.knob output{font-family:var(--mono);font-size:10px;color:var(--accent);white-space:nowrap;min-width:64px;text-align:right}
+.row{display:flex;gap:6px;margin-top:auto}
+.row .btn{flex:1;padding:6px 4px;font-size:9.5px;letter-spacing:.08em}
+.row .btn.x{flex:0 0 32px;font-size:13px;letter-spacing:0}
+
+/* list view reflow */
+#grid.list .card{flex-direction:row;align-items:stretch}
+#grid.list .card:hover{transform:none;box-shadow:none;border-color:#333a45}
+#grid.list .shot{flex:0 0 104px;width:104px;aspect-ratio:1;border-right:1px solid var(--line)}
+#grid.list .chip{top:5px;right:5px;padding:2px 5px;font-size:9px}
+#grid.list .chip.done b{font-size:11px}
+#grid.list .meta{
+  border-top:0;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap;padding:8px 12px;
+}
+#grid.list .top{flex:1 1 190px;min-width:0;display:flex;flex-direction:column;gap:3px}
+#grid.list .bar{flex:0 0 90px;height:5px}
+#grid.list .knob{flex:1 1 240px;min-width:190px}
+#grid.list .row{flex:0 0 auto;margin-top:0}
+#grid.list .row .btn{flex:0 0 auto;padding:6px 10px}
+#grid.grid .top{display:flex;flex-direction:column;gap:6px}
+
+/* ───────────── inspector ───────────── */
+.sheet{position:fixed;inset:0;z-index:40;background:rgba(6,7,9,0);display:none;place-items:center;padding:14px;backdrop-filter:blur(0px);transition:background .25s var(--ease),backdrop-filter .25s var(--ease)}
+.sheet.open{display:grid;background:rgba(6,7,9,.8);backdrop-filter:blur(3px)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;width:min(980px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden;will-change:transform,opacity}
+.panel .head{display:flex;align-items:center;gap:12px;padding:11px 13px;border-bottom:1px solid var(--line)}
+.panel .head .name{flex:1;font-size:13px}
+.compare{
+  position:relative;flex:1;min-height:240px;overflow:hidden;display:grid;place-items:center;user-select:none;touch-action:none;
+  background:conic-gradient(from 90deg at 50% 50%,#1a1d22 25%,#15181c 0 50%,#1a1d22 0 75%,#15181c 0);background-size:17px 17px;
+}
+.stack{position:relative;line-height:0;max-width:100%}
+.stack img{max-width:100%;max-height:56vh;display:block}
+.after{position:absolute;inset:0;overflow:hidden}
+.after img{position:absolute;top:0;left:0;height:100%}
+.handle{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);cursor:ew-resize}
+.handle::after{content:'';position:absolute;top:50%;left:50%;translate:-50% -50%;width:24px;height:24px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-15)}
+.tag{position:absolute;bottom:9px;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;background:rgba(11,12,14,.86);border:1px solid var(--line);padding:3px 7px;border-radius:5px;color:var(--muted)}
+.tag.l{left:9px} .tag.r{right:9px;border-color:var(--accent-30);color:var(--accent)}
+.panel .foot{display:flex;align-items:center;gap:16px;padding:11px 13px;border-top:1px solid var(--line);flex-wrap:wrap}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:760px){
+  body{font-size:13.5px}
+  header{padding:10px 12px;gap:8px}
+  .brand{width:100%;margin-right:0}
+  .strip{gap:12px;padding:9px 12px;overflow-x:auto}
+  .strip .hint{display:none}
+  main{padding:10px}
+  .totals{padding:10px 12px;gap:14px}
+  .big b{font-size:27px}
+  #grid.grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,165px),1fr));gap:9px}
+  #grid.list .shot{flex:0 0 74px;width:74px}
+  #grid.list .bar{display:none}
+  .knob output{min-width:54px}
+}
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<header>
+  <div class="brand"><b>P<em>O</em>P</b><span>compress</span></div>
+
+  <div class="seg tabs" role="group" aria-label="Output format">
+    <button data-fmt="auto" aria-pressed="true">keep</button>
+    <button data-fmt="image/webp" aria-pressed="false">webp</button>
+    <button data-fmt="image/jpeg" aria-pressed="false">jpeg</button>
+  </div>
+
+  <div class="seg views" role="group" aria-label="Layout">
+    <button data-view="grid" aria-pressed="true" title="Grid view" aria-label="Grid view">
+      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    </button>
+    <button data-view="list" aria-pressed="false" title="List view" aria-label="List view">
+      <svg viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="3" rx="1"/><rect x="1" y="6.5" width="14" height="3" rx="1"/><rect x="1" y="11" width="14" height="3" rx="1"/></svg>
+    </button>
+  </div>
+
+  <button class="btn" id="pick">Add files</button>
+  <button class="btn ghost" id="clear" disabled>Clear</button>
+  <button class="btn primary" id="run" disabled>Compress<span class="count" id="runN">0</span></button>
+  <button class="btn" id="saveAll" disabled>Save all<span class="count" id="saveN">0</span></button>
+  <input type="file" id="file" accept="image/png,image/jpeg,image/webp" multiple hidden />
+</header>
+
+<div class="warn" id="warn" hidden>This browser has no CompressionStream, so PNGs fall back to plain re-encoding and will save far less. Chrome, Edge, Safari 16.4+ or Firefox 113+ get the full encoder.</div>
+
+<div class="strip">
+  <div class="ctl" id="modeWrap">
+    <label>PNG mode</label>
+    <div class="seg modes" role="group" aria-label="PNG mode">
+      <button data-mode="lossless" aria-pressed="false">lossless</button>
+      <button data-mode="auto" aria-pressed="true">auto</button>
+      <button data-mode="manual" aria-pressed="false">manual</button>
+    </div>
+  </div>
+  <div class="ctl" id="ctlTarget">
+    <label for="target">Quality floor</label>
+    <input type="range" id="target" min="0" max="100" step="5" value="70" />
+    <output for="target" id="targetOut">very high</output>
+  </div>
+  <div class="ctl narrow" id="ctlColors" hidden>
+    <label for="colors">Colors</label>
+    <input type="range" id="colors" min="2" max="256" step="2" value="256" />
+    <output for="colors" id="colorsOut">256</output>
+  </div>
+  <div class="ctl narrow" id="ctlDither" hidden>
+    <label for="dither">Dither</label>
+    <input type="range" id="dither" min="0" max="100" step="5" value="70" />
+    <output for="dither" id="ditherOut">70%</output>
+  </div>
+  <div class="ctl narrow" id="ctlQuality" hidden>
+    <label for="quality">Quality</label>
+    <input type="range" id="quality" min="20" max="100" step="1" value="82" />
+    <output for="quality" id="qualityOut">82%</output>
+  </div>
+  <div class="ctl narrow">
+    <label for="maxw">Max width</label>
+    <select id="maxw">
+      <option value="0" selected>Original</option>
+      <option value="2560">2560 px</option>
+      <option value="1920">1920 px</option>
+      <option value="1280">1280 px</option>
+      <option value="800">800 px</option>
+    </select>
+  </div>
+  <span class="hint" id="modeNote" style="margin-left:auto"></span>
+</div>
+
+<div class="totals">
+  <div class="big"><b id="tSaved">0%</b><i>smaller</i></div>
+  <div class="flow">
+    <div class="nums">
+      <s id="tBefore">0 KB</s><span>→</span><b id="tAfter">0 KB</b><u id="tDelta"></u>
+      <span class="count-txt" id="tCount">no files yet</span>
+    </div>
+    <div class="track" aria-hidden="true">
+      <i id="tTrack"></i><u style="left:25%"></u><u style="left:50%"></u><u style="left:75%"></u>
+    </div>
+  </div>
+</div>
+
+<main id="main">
+  <div class="empty" id="empty">
+    <h1>Smaller images, <em>your</em> call on quality</h1>
+    <p>Lossless keeps every pixel. Auto finds the smallest palette that still clears your quality floor, and stays lossless when it can't. Every tile has its own slider.</p>
+    <button class="btn primary" id="pick2">Add files</button>
+    <span class="hint">drag &amp; drop &nbsp;·&nbsp; ⌘V paste &nbsp;·&nbsp; 20 files max</span>
+  </div>
+  <div id="grid" class="grid" hidden></div>
+</main>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Image inspector">
+  <div class="panel" id="panel">
+    <div class="head">
+      <span class="name" id="iName">—</span>
+      <span class="hint" id="iDims"></span>
+      <button class="btn ghost" id="iClose">Close</button>
+    </div>
+    <div class="compare" id="compare">
+      <div class="stack" id="stack">
+        <img id="iBefore" alt="Original" />
+        <div class="after" id="afterWrap"><img id="iAfter" alt="Compressed" /></div>
+        <div class="handle" id="handle" style="left:50%"></div>
+      </div>
+      <span class="tag l">before</span>
+      <span class="tag r">after</span>
+    </div>
+    <div class="foot">
+      <div class="ctl" id="iKnob">
+        <label for="is" id="iLabel">Quality</label>
+        <input type="range" id="is" min="0" max="100" step="5" value="70" />
+        <output id="isOut">very high</output>
+      </div>
+      <span class="sizes" id="iSizes"></span>
+      <button class="btn primary" id="iSave" style="margin-left:auto">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>/* ===================================================================
+   POP compress · core
+   quantizeRGBA  → indices + RGBA palette (alpha is quantized too)
+   encodeIndexedPNG → real colorType-3 PNG, 1/2/4/8 bpp, PLTE + tRNS
+   deflate is injected: CompressionStream in browser, zlib in node
+   =================================================================== */
+
+function quantizeRGBA(data, w, h, maxColors, dither){
+  const px = w * h;
+
+  /* ---- histogram ----
+     Binning is what keeps this fast: an 8MP noise image has ~2M unique
+     colours and median-cutting that directly took over three minutes.
+     Buckets hold running sums, so centroids stay accurate even though
+     the bucket key is coarse. Bin width adapts to how busy the image is. */
+  let RB = 5, AB = 4, hist;                    // rgb bits, alpha bits
+  const build = () => {
+    const m = new Map();
+    const rs = 8 - RB, as = 8 - AB;
+    for (let i = 0; i < data.length; i += 4){
+      const a = data[i+3] < 8 ? 0 : data[i+3];
+      const key = a === 0 ? -1 :
+        (((data[i] >> rs) << (RB + RB + AB)) | ((data[i+1] >> rs) << (RB + AB)) |
+         ((data[i+2] >> rs) << AB) | (a >> as));
+      let b = m.get(key);
+      if (b) { b[0]+=data[i]; b[1]+=data[i+1]; b[2]+=data[i+2]; b[3]+=a; b[4]++; }
+      else m.set(key, key === -1 ? [0,0,0,0,1] : [data[i],data[i+1],data[i+2],a,1]);
+    }
+    return m;
+  };
+  hist = build();
+  if (hist.size > 50000){ RB = 4; AB = 3; hist = build(); }   // very busy image, coarsen
+
+  const hasAlpha = hist.has(-1);
+  const exact = hist.size <= 4096;              // few enough colours to map precisely
+  const colors = [];
+  for (const [key, b] of hist){
+    if (key === -1) continue;
+    colors.push([b[0]/b[4], b[1]/b[4], b[2]/b[4], b[3]/b[4], b[4]]);
+  }
+
+  /* ---- median cut over buckets ---- */
+  const budget = Math.max(1, hasAlpha ? maxColors - 1 : maxColors);
+  let boxes = colors.length ? [colors] : [];
+  while (boxes.length && boxes.length < budget){
+    let bi = -1, best = -1, axis = 0;
+    for (let i = 0; i < boxes.length; i++){
+      const b = boxes[i];
+      if (b.length < 2) continue;
+      const lo = [255,255,255,255], hi = [0,0,0,0];
+      for (const c of b) for (let k = 0; k < 4; k++){
+        if (c[k] < lo[k]) lo[k] = c[k];
+        if (c[k] > hi[k]) hi[k] = c[k];
+      }
+      const wgt = [1, 1.25, 0.85, 1.6];       // green matters more, alpha most of all
+      for (let k = 0; k < 4; k++){
+        const spread = (hi[k] - lo[k]) * wgt[k];
+        if (spread > best){ best = spread; bi = i; axis = k; }
+      }
+    }
+    if (bi < 0 || best <= 0) break;
+    const box = boxes[bi];
+    box.sort((a, b) => a[axis] - b[axis]);
+    const total = box.reduce((s, c) => s + c[4], 0);
+    let acc = 0, cut = 1;
+    for (let i = 0; i < box.length - 1; i++){
+      acc += box[i][4];
+      if (acc >= total / 2){ cut = i + 1; break; }
+    }
+    boxes.splice(bi, 1, box.slice(0, cut), box.slice(cut));
+  }
+
+  let pal = boxes.filter(b => b.length).map(b => {
+    let r = 0, g = 0, bl = 0, a = 0, n = 0;
+    for (const c of b){ r += c[0]*c[4]; g += c[1]*c[4]; bl += c[2]*c[4]; a += c[3]*c[4]; n += c[4]; }
+    return [Math.round(r/n), Math.round(g/n), Math.round(bl/n), Math.round(a/n)];
+  });
+  if (hasAlpha && !pal.some(p => p[3] === 0)) pal.push([0,0,0,0]);
+  if (!pal.length) pal = [[0,0,0,0]];
+  pal.sort((x, y) => x[3] - y[3]);            // opaque entries last so tRNS truncates
+
+  /* ---- nearest-palette lookup ----
+     exact Map for simple images, coarse LUT for busy ones so the
+     mapping pass stays linear instead of hammering 256 comparisons. */
+  const search = (r, g, b, a) => {
+    let bd = Infinity, bidx = 0;
+    for (let i = 0; i < pal.length; i++){
+      const p = pal[i];
+      const da = a - p[3];
+      let d = da * da * 3;
+      if (a > 8 || p[3] > 8){
+        const dr = r - p[0], dg = g - p[1], db = b - p[2];
+        d += (dr*dr*0.30 + dg*dg*0.59 + db*db*0.11) * (a / 255);
+      }
+      if (d < bd){ bd = d; bidx = i; }
+    }
+    return bidx;
+  };
+  let nearest;
+  if (exact){
+    const cache = new Map();
+    nearest = (r, g, b, a) => {
+      const key = ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
+      let hit = cache.get(key);
+      if (hit === undefined){ hit = search(r, g, b, a); cache.set(key, hit); }
+      return hit;
+    };
+  } else {
+    const lut = new Int16Array(1 << 18).fill(-1);   // 5:5:5:3
+    nearest = (r, g, b, a) => {
+      const k = ((r >> 3) << 13) | ((g >> 3) << 8) | ((b >> 3) << 3) | (a >> 5);
+      let hit = lut[k];
+      if (hit < 0){ hit = search(r, g, b, a); lut[k] = hit; }
+      return hit;
+    };
+  }
+
+  const idx = new Uint8Array(px);
+  const amount = typeof dither === 'number' ? dither : (dither ? 0.85 : 0);
+
+  if (!amount){
+    for (let p = 0, i = 0; p < px; p++, i += 4)
+      idx[p] = nearest(data[i], data[i+1], data[i+2], data[i+3] < 8 ? 0 : data[i+3]);
+    return { indices: idx, palette: pal };
+  }
+
+  // Floyd-Steinberg, serpentine, error carried on RGB only
+  const err = new Float32Array(px * 3);
+  for (let y = 0; y < h; y++){
+    const l2r = y % 2 === 0;
+    for (let n = 0; n < w; n++){
+      const x = l2r ? n : w - 1 - n;
+      const i = (y * w + x) * 4, e = (y * w + x) * 3, p = y * w + x;
+      const a = data[i+3] < 8 ? 0 : data[i+3];
+      if (!a){ idx[p] = nearest(0,0,0,0); continue; }
+      const r = Math.max(0, Math.min(255, data[i]   + err[e]));
+      const g = Math.max(0, Math.min(255, data[i+1] + err[e+1]));
+      const b = Math.max(0, Math.min(255, data[i+2] + err[e+2]));
+      const k = nearest(r|0, g|0, b|0, a);
+      idx[p] = k;
+      const q = pal[k];
+      const de = [(r - q[0]) * amount, (g - q[1]) * amount, (b - q[2]) * amount];
+      const push = (dx, dy, f) => {
+        const nx = x + (l2r ? dx : -dx), ny = y + dy;
+        if (nx < 0 || nx >= w || ny >= h) return;
+        const j = (ny * w + nx) * 3;
+        err[j] += de[0]*f; err[j+1] += de[1]*f; err[j+2] += de[2]*f;
+      };
+      push(1,0,7/16); push(-1,1,3/16); push(0,1,5/16); push(1,1,1/16);
+    }
+  }
+  return { indices: idx, palette: pal };
+}
+
+/* ---------------------- indexed PNG writer ---------------------- */
+const CRC_TABLE = (() => {
+  const t = new Int32Array(256);
+  for (let n = 0; n < 256; n++){
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c;
+  }
+  return t;
+})();
+function crc32(bytes){
+  let c = -1;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 255] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+function chunk(type, body){
+  const out = new Uint8Array(12 + body.length);
+  const dv = new DataView(out.buffer);
+  dv.setUint32(0, body.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(body, 8);
+  dv.setUint32(8 + body.length, crc32(out.subarray(4, 8 + body.length)));
+  return out;
+}
+
+// pack indices into scanlines at the smallest legal bit depth, filter 0
+function packRows(idx, w, h, depth){
+  const per = 8 / depth;
+  const stride = Math.ceil(w / per);
+  const raw = new Uint8Array((stride + 1) * h);
+  let o = 0;
+  for (let y = 0; y < h; y++){
+    raw[o++] = 0;                        // filter: none (palette rows gain nothing from filters)
+    if (depth === 8){
+      raw.set(idx.subarray(y * w, y * w + w), o);
+      o += stride;
+    } else {
+      for (let x = 0; x < w; x++){
+        const bit = (x % per) * depth;
+        raw[o + ((x / per) | 0)] |= idx[y * w + x] << (8 - depth - bit);
+      }
+      o += stride;
+    }
+  }
+  return raw;
+}
+
+async function encodeIndexedPNG(w, h, indices, palette, deflate){
+  const n = palette.length;
+  const depth = n <= 2 ? 1 : n <= 4 ? 2 : n <= 16 ? 4 : 8;
+
+  const ihdr = new Uint8Array(13);
+  const dv = new DataView(ihdr.buffer);
+  dv.setUint32(0, w); dv.setUint32(4, h);
+  ihdr[8] = depth; ihdr[9] = 3; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+
+  const plte = new Uint8Array(n * 3);
+  for (let i = 0; i < n; i++){ plte[i*3] = palette[i][0]; plte[i*3+1] = palette[i][1]; plte[i*3+2] = palette[i][2]; }
+
+  // tRNS only needs to cover up to the last non-opaque entry
+  let last = -1;
+  for (let i = 0; i < n; i++) if (palette[i][3] < 255) last = i;
+  const trns = last >= 0 ? new Uint8Array(last + 1).map((_, i) => palette[i][3]) : null;
+
+  const idat = await deflate(packRows(indices, w, h, depth));
+
+  const parts = [
+    new Uint8Array([137,80,78,71,13,10,26,10]),
+    chunk('IHDR', ihdr),
+    chunk('PLTE', plte),
+    ...(trns ? [chunk('tRNS', trns)] : []),
+    chunk('IDAT', idat),
+    chunk('IEND', new Uint8Array(0))
+  ];
+  const size = parts.reduce((s, p) => s + p.length, 0);
+  const png = new Uint8Array(size);
+  let off = 0;
+  for (const p of parts){ png.set(p, off); off += p.length; }
+  return png;
+}
+
+/* ------------------ lossless truecolor encoder ------------------
+   Same pixels out as in. Savings come from picking the best filter
+   per scanline and letting DEFLATE work on the residuals, plus
+   dropping the alpha channel when nothing is transparent.        */
+function pickFilters(px, w, h, bpp){
+  const stride = w * bpp;
+  const raw = new Uint8Array((stride + 1) * h);
+  const cand = new Uint8Array(stride * 5);
+  let prev = new Uint8Array(stride), cur = new Uint8Array(stride), o = 0;
+
+  for (let y = 0; y < h; y++){
+    cur.set(px.subarray(y * stride, y * stride + stride));
+    let bestType = 0, bestCost = Infinity;
+
+    for (let t = 0; t < 5; t++){
+      let cost = 0;
+      const base = t * stride;
+      for (let i = 0; i < stride; i++){
+        const a = i >= bpp ? cur[i - bpp] : 0;
+        const b = prev[i];
+        const c = i >= bpp ? prev[i - bpp] : 0;
+        let v;
+        if (t === 0) v = cur[i];
+        else if (t === 1) v = cur[i] - a;
+        else if (t === 2) v = cur[i] - b;
+        else if (t === 3) v = cur[i] - ((a + b) >> 1);
+        else {
+          const p = a + b - c;
+          const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+          v = cur[i] - (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
+        }
+        v &= 255;
+        cand[base + i] = v;
+        cost += v < 128 ? v : 256 - v;      // minimum sum of absolute differences
+      }
+      if (cost < bestCost){ bestCost = cost; bestType = t; }
+    }
+    raw[o++] = bestType;
+    raw.set(cand.subarray(bestType * stride, bestType * stride + stride), o);
+    o += stride;
+    const swap = prev; prev = cur; cur = swap;
+  }
+  return raw;
+}
+
+async function encodeTruecolorPNG(w, h, rgba, deflate){
+  let opaque = true;
+  for (let i = 3; i < rgba.length; i += 4) if (rgba[i] !== 255){ opaque = false; break; }
+  const bpp = opaque ? 3 : 4;
+
+  let px;
+  if (opaque){
+    px = new Uint8Array(w * h * 3);
+    for (let s = 0, d = 0; s < rgba.length; s += 4, d += 3){
+      px[d] = rgba[s]; px[d+1] = rgba[s+1]; px[d+2] = rgba[s+2];
+    }
+  } else {
+    px = rgba instanceof Uint8Array ? rgba : new Uint8Array(rgba.buffer ? rgba.buffer.slice(0) : rgba);
+  }
+
+  const ihdr = new Uint8Array(13);
+  const dv = new DataView(ihdr.buffer);
+  dv.setUint32(0, w); dv.setUint32(4, h);
+  ihdr[8] = 8; ihdr[9] = opaque ? 2 : 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+
+  const idat = await deflate(pickFilters(px, w, h, bpp));
+  const parts = [
+    new Uint8Array([137,80,78,71,13,10,26,10]),
+    chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))
+  ];
+  const size = parts.reduce((s, p) => s + p.length, 0);
+  const png = new Uint8Array(size);
+  let off = 0;
+  for (const p of parts){ png.set(p, off); off += p.length; }
+  return png;
+}
+
+/* ---- error of a palette result against the source, in dB ---- */
+function measure(orig, indices, palette){
+  let se = 0, n = 0, worst = 0, aErr = 0;
+  for (let p = 0, i = 0; p < indices.length; p++, i += 4){
+    const q = palette[indices[p]];
+    const oa = orig[i+3] < 8 ? 0 : orig[i+3];
+    aErr = Math.max(aErr, Math.abs(oa - q[3]));
+    if (oa <= 8) continue;
+    let px = 0;
+    for (let k = 0; k < 3; k++){ const d = orig[i+k] - q[k]; se += d*d; px += d*d; }
+    if (px > worst) worst = px;
+    n++;
+  }
+  if (!n) return { psnr: Infinity, worst: 0, aErr };
+  const mse = se / (n * 3);
+  return { psnr: mse === 0 ? Infinity : 10 * Math.log10(65025 / mse), worst: Math.sqrt(worst / 3), aErr };
+}
+
+
+</script>
+<script>/* ===================================================================
+   portal · drag-and-drop vortex
+   follows the pointer inside the drop area, then swallows the files
+   =================================================================== */
+const Portal = (() => {
+  const cv = document.getElementById('fx');
+  const ctx = cv.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ACCENT = [255, 176, 32];
+  const rgba = (a, l = 1) => `rgba(${ACCENT.map(c => Math.min(255, Math.round(c * l))).join(',')},${a})`;
+
+  let W = 0, H = 0, raf = null, last = 0;
+  const P = {
+    x: 0, y: 0, tx: 0, ty: 0,     // position, eased toward target
+    open: 0, want: 0,             // 0..1 aperture
+    spin: 0, pulse: 0,
+    phase: 'idle',                // idle | hover | suck | collapse
+    shock: 0,
+    sprites: [], motes: []
+  };
+  const R = () => Math.min(150, Math.max(84, Math.min(W, H) * 0.16)); // portal radius
+
+  function size(){
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  addEventListener('resize', size); size();
+
+  // swirling motes that stream inward forever while the portal is open
+  function seed(){
+    P.motes.length = 0;
+    for (let i = 0; i < 96; i++) P.motes.push({
+      a: Math.random() * Math.PI * 2,
+      r: 0.45 + Math.random() * 1.9,       // in portal radii
+      sp: 0.7 + Math.random() * 1.5,
+      z: 0.4 + Math.random() * 0.8,
+      w: Math.random() * 0.5 + 0.5
+    });
+  }
+  seed();
+
+  function clampToArea(x, y){
+    const el = document.getElementById('main');
+    if (!el) return [x, y];
+    const b = el.getBoundingClientRect(), pad = R() * 0.75;
+    return [
+      Math.min(b.right - pad, Math.max(b.left + pad, x)),
+      Math.min(b.bottom - pad, Math.max(b.top + pad, y))
+    ];
+  }
+
+  function start(){ if (!raf){ last = performance.now(); raf = requestAnimationFrame(tick); } }
+
+  /* ---- public ---- */
+  function hover(x, y){
+    const [cx, cy] = clampToArea(x, y);
+    if (P.phase === 'idle'){ P.x = cx; P.y = cy; }   // no fly-in from a stale spot
+    P.tx = cx; P.ty = cy;
+    P.phase = 'suck' === P.phase ? P.phase : 'hover';
+    P.want = 1;
+    cv.style.opacity = 1;
+    if (reduce){ paintStatic(); return; }
+    start();
+  }
+  function leave(){
+    if (P.phase === 'suck' || P.phase === 'collapse') return;
+    P.want = 0; P.phase = 'idle';
+    if (reduce) cv.style.opacity = 0;
+  }
+  // swallow: thumbnails spiral in. urls may be empty — motes still surge.
+  function swallow(urls, x, y){
+    const [cx, cy] = clampToArea(x ?? P.x ?? W / 2, y ?? P.y ?? H / 2);
+    if (P.phase === 'idle'){ P.x = cx; P.y = cy; }
+    P.tx = cx; P.ty = cy;
+    P.phase = 'suck'; P.want = 1; P.pulse = 1;
+    cv.style.opacity = 1;
+    if (reduce){ setTimeout(() => { P.phase = 'idle'; P.want = 0; cv.style.opacity = 0; }, 160); return; }
+    P.sprites = (urls || []).slice(0, 10).map((u, i) => {
+      const img = new Image(); img.src = u;
+      return {
+        img, a: (i / Math.max(1, urls.length)) * Math.PI * 2 + Math.random(),
+        r: 2.5 + Math.random() * 1.1, spin: (Math.random() - 0.5) * 4,
+        rot: (Math.random() - 0.5) * 0.6, t: 0, delay: i * 0.05
+      };
+    });
+    if (!P.sprites.length) P.sprites = [];
+    start();
+  }
+  function done(){ if (P.phase === 'suck'){ P.phase = 'collapse'; P.shock = 0.001; } }
+
+  /* ---- draw ---- */
+  function core(r, open){
+    // throat: dark hole with a hot rim
+    const g = ctx.createRadialGradient(P.x, P.y, r * 0.05, P.x, P.y, r);
+    g.addColorStop(0, 'rgba(6,7,9,0.96)');
+    g.addColorStop(0.55, 'rgba(10,11,14,0.72)');
+    g.addColorStop(0.86, rgba(0.20 * open, 1));
+    g.addColorStop(1, rgba(0, 1));
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(P.x, P.y, r, 0, 7); ctx.fill();
+  }
+  function rings(r, open){
+    // three ellipses at different tilts, rotating at different rates
+    for (let i = 0; i < 3; i++){
+      const k = 1 - i * 0.17;
+      ctx.save();
+      ctx.translate(P.x, P.y);
+      ctx.rotate(P.spin * (i % 2 ? -0.6 : 1) + i * 0.7);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * k, r * k * (0.34 + i * 0.13), 0, 0, 7);
+      ctx.strokeStyle = rgba((0.5 - i * 0.13) * open);
+      ctx.lineWidth = 1.4 - i * 0.3;
+      ctx.stroke();
+      ctx.restore();
+    }
+    // aperture ring + soft bloom
+    ctx.beginPath(); ctx.arc(P.x, P.y, r * (0.99 + P.pulse * 0.12), 0, 7);
+    ctx.strokeStyle = rgba(0.85 * open); ctx.lineWidth = 2 + P.pulse * 2; ctx.stroke();
+    const bloom = ctx.createRadialGradient(P.x, P.y, r * 0.8, P.x, P.y, r * (1.9 + P.pulse));
+    bloom.addColorStop(0, rgba(0.16 * open));
+    bloom.addColorStop(1, rgba(0));
+    ctx.fillStyle = bloom;
+    ctx.beginPath(); ctx.arc(P.x, P.y, r * (1.9 + P.pulse), 0, 7); ctx.fill();
+  }
+  function motes(r, open, dt, surge){
+    ctx.lineCap = 'round';
+    for (const m of P.motes){
+      m.a += (0.5 + m.sp * 0.6) * dt * (1 + surge * 1.6) / Math.max(0.35, m.r);
+      m.r -= dt * m.sp * (0.28 + surge * 1.5);
+      if (m.r < 0.12){ m.r = 1.7 + Math.random() * 1.5; m.a = Math.random() * 7; }
+      const rr = m.r * r;
+      const x = P.x + Math.cos(m.a) * rr;
+      const y = P.y + Math.sin(m.a) * rr * 0.62;   // squash: the portal lies at an angle
+      const tail = 0.16 + surge * 0.18;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(P.x + Math.cos(m.a - tail) * rr * 0.94, P.y + Math.sin(m.a - tail) * rr * 0.58);
+      ctx.strokeStyle = rgba(Math.min(0.85, (1.5 - m.r) * 0.5) * open * m.w, 1.1);
+      ctx.lineWidth = m.z * (1 + surge);
+      ctx.stroke();
+    }
+  }
+  function sprites(r, dt){
+    for (const s of P.sprites){
+      if (s.delay > 0){ s.delay -= dt; continue; }
+      s.t += dt;
+      s.a += dt * (1.6 + s.spin * 0.4);
+      s.r -= dt * (0.9 + s.t * 1.5);
+      if (s.r < 0.02) continue;
+      const rr = s.r * r;
+      const x = P.x + Math.cos(s.a) * rr, y = P.y + Math.sin(s.a) * rr * 0.7;
+      const sc = Math.max(0, Math.min(1, s.r / 2.4));
+      const box = r * 0.62 * sc;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, s.r * 0.7));
+      ctx.translate(x, y);
+      ctx.rotate(s.a * 0.25 + s.rot * (1 - sc) * 6);
+      if (s.img.complete && s.img.naturalWidth){
+        const ar = s.img.naturalWidth / s.img.naturalHeight;
+        const w = ar >= 1 ? box : box * ar, h = ar >= 1 ? box / ar : box;
+        ctx.drawImage(s.img, -w / 2, -h / 2, w, h);
+        ctx.strokeStyle = rgba(0.5); ctx.lineWidth = 1;
+        ctx.strokeRect(-w / 2, -h / 2, w, h);
+      } else {
+        ctx.fillStyle = rgba(0.5);
+        ctx.fillRect(-box / 2, -box / 2, box, box);
+      }
+      ctx.restore();
+    }
+    P.sprites = P.sprites.filter(s => s.r > 0.02);
+  }
+  function paintStatic(){
+    ctx.clearRect(0, 0, W, H);
+    const r = R();
+    core(r, 1); rings(r, 1);
+  }
+
+  function tick(now){
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    ctx.clearRect(0, 0, W, H);
+
+    // ease position and aperture
+    P.x += (P.tx - P.x) * Math.min(1, dt * 11);
+    P.y += (P.ty - P.y) * Math.min(1, dt * 11);
+    P.open += (P.want - P.open) * Math.min(1, dt * (P.want ? 9 : 6));
+    P.pulse *= 1 - Math.min(1, dt * 5);
+    P.spin += dt * (0.55 + (P.phase === 'suck' ? 2.6 : 0));
+
+    const surge = P.phase === 'suck' ? 1 : P.phase === 'collapse' ? 0.4 : 0;
+    const r = R() * (0.9 + P.open * 0.1) * (P.phase === 'collapse' ? Math.max(0, 1 - P.shock * 1.5) : 1);
+
+    if (P.open > 0.01){
+      motes(r, P.open, dt, surge);
+      core(r, P.open);
+      rings(r, P.open);
+      if (P.sprites.length) sprites(r, dt);
+    }
+
+    if (P.phase === 'collapse'){
+      P.shock += dt * 1.9;
+      const sr = r * (1 + P.shock * 2.6);
+      ctx.beginPath(); ctx.arc(P.x, P.y, sr, 0, 7);
+      ctx.strokeStyle = rgba(Math.max(0, 0.55 - P.shock * 0.55));
+      ctx.lineWidth = 3 * Math.max(0, 1 - P.shock);
+      ctx.stroke();
+      P.want = 0;
+      if (P.shock > 1 && P.open < 0.02){ P.phase = 'idle'; P.sprites.length = 0; seed(); }
+    }
+
+    if (P.phase === 'idle' && P.open < 0.02 && !P.sprites.length){
+      ctx.clearRect(0, 0, W, H);
+      cv.style.opacity = 0;
+      raf = null; return;
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  return { hover, leave, swallow, done };
+})();
+</script>
+<script>/* ============================ helpers ============================ */
+const $ = id => document.getElementById(id);
+const MAX = 20;
+const kb = n => n < 1024 ? n + ' B'
+  : n < 1048576 ? (n/1024).toFixed(n/1024 < 10 ? 1 : 0) + ' KB'
+  : (n/1048576).toFixed(2) + ' MB';
+const extOf = t => t === 'image/png' ? 'png' : t === 'image/webp' ? 'webp' : 'jpg';
+const stem = n => n.replace(/\.[^.]+$/, '');
+const pctOf = it => Math.max(0, Math.round((1 - it.out.size / it.size) * 100));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+let items = [], seq = 0, busy = false, current = null, view = 'grid';
+const opts = { fmt:'auto', mode:'auto', target:70, quality:82, colors:256, dither:70, maxw:0 };
+
+// quality floor slider (0-100) → PSNR target in dB
+const dbOf = t => 24 + (t / 100) * 26;          // 24 dB (small) .. 50 dB (near identical)
+const gradeOf = db => db === Infinity ? 'lossless'
+  : db >= 46 ? 'near identical' : db >= 40 ? 'very high'
+  : db >= 34 ? 'high' : db >= 29 ? 'medium' : 'smallest';
+
+const CAN_DEFLATE = typeof CompressionStream !== 'undefined';
+async function deflate(bytes){
+  const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+/* ============================ encode ============================ */
+const toBlob = (cv, type, q) => new Promise(r => cv.toBlob(r, type, q));
+
+function frame(item){
+  const src = item.bitmap;
+  let w = src.width, h = src.height;
+  if (opts.maxw && w > opts.maxw){ h = Math.max(1, Math.round(h * opts.maxw / w)); w = opts.maxw; }
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(src, 0, 0, w, h);
+  return { cv, ctx, w, h };
+}
+
+async function pngLossless(w, h, data){
+  if (!CAN_DEFLATE) return null;
+  const bytes = await encodeTruecolorPNG(w, h, new Uint8Array(data.buffer.slice(0)), deflate);
+  return { blob: new Blob([bytes], { type:'image/png' }), quality: Infinity, note: 'lossless' };
+}
+
+async function pngPalette(w, h, data, colors, dither){
+  const q = quantizeRGBA(Uint8ClampedArray.from(data), w, h, colors, dither);
+  const m = measure(data, q.indices, q.palette);
+  const bytes = await encodeIndexedPNG(w, h, q.indices, q.palette, deflate);
+  return {
+    blob: new Blob([bytes], { type:'image/png' }),
+    quality: m.psnr, palette: q.palette.length,
+    note: `${q.palette.length} colors · ${m.psnr === Infinity ? 'lossless' : m.psnr.toFixed(1) + ' dB'}`
+  };
+}
+
+/* auto: find the smallest palette that still clears the quality floor,
+   and fall back to true lossless when no palette can.                */
+async function pngAuto(item, w, h, data){
+  const floor = dbOf(item.target);
+  const sizes = [16, 24, 32, 48, 64, 96, 128, 160, 192, 224, 256];
+  let lo = 0, hi = sizes.length - 1, hit = null;
+  while (lo <= hi){
+    const mid = (lo + hi) >> 1;
+    const r = await pngPalette(w, h, data, sizes[mid], 0);
+    if (r.quality >= floor){ hit = r; hi = mid - 1; } else lo = mid + 1;
+  }
+  const loss = await pngLossless(w, h, data);
+  const pool = [hit, loss].filter(Boolean);
+  if (!pool.length) return null;
+  pool.sort((a, b) => a.blob.size - b.blob.size);
+  return pool[0];
+}
+
+async function encode(item){
+  const target = opts.fmt === 'auto' ? item.type : opts.fmt;
+
+  if (target === 'image/png'){
+    const { cv, ctx, w, h } = frame(item);
+    const data = ctx.getImageData(0, 0, w, h).data;
+    let best = null;
+
+    if (!CAN_DEFLATE){
+      best = { blob: await toBlob(cv, 'image/png'), quality: Infinity, note: 'browser fallback' };
+    } else if (opts.mode === 'lossless'){
+      best = await pngLossless(w, h, data);
+    } else if (opts.mode === 'auto'){
+      best = await pngAuto(item, w, h, data);
+    } else {
+      const tries = [await pngPalette(w, h, data, item.colors, opts.dither / 100)];
+      if (opts.dither) tries.push(await pngPalette(w, h, data, item.colors, 0));
+      tries.sort((a, b) => a.blob.size - b.blob.size);
+      best = tries[0];
+    }
+    finish(item, best.blob, best.note, best.quality);
+    return;
+  }
+
+  // lossy targets
+  const { cv, ctx, w, h } = frame(item);
+  let blob;
+  const q = (opts.mode === 'lossless' ? 100 : item.quality) / 100;
+  if (target === 'image/jpeg'){
+    const px = ctx.getImageData(0, 0, w, h);
+    const flat = document.createElement('canvas');
+    flat.width = w; flat.height = h;
+    const f = flat.getContext('2d');
+    f.fillStyle = '#fff'; f.fillRect(0, 0, w, h);
+    f.putImageData(px, 0, 0);
+    f.globalCompositeOperation = 'destination-over';
+    f.fillStyle = '#fff'; f.fillRect(0, 0, w, h);
+    blob = await toBlob(flat, 'image/jpeg', q);
+  } else {
+    blob = await toBlob(cv, target, q);
+    if (!blob || blob.type !== target) blob = await toBlob(cv, 'image/jpeg', q);
+  }
+  if (!blob) throw new Error('encode failed');
+  finish(item, blob, `q${Math.round(q * 100)}`, null);
+}
+
+function finish(item, blob, note, quality){
+  const sameShape = blob.type === item.type && !opts.maxw;
+  if (sameShape && blob.size >= item.size){
+    item.out = item.file; item.outType = item.type;
+    item.skipped = true; item.note = 'original was already smaller'; item.quality_db = Infinity;
+  } else {
+    item.out = blob; item.outType = blob.type;
+    item.skipped = false; item.note = note; item.quality_db = quality;
+  }
+  item.state = 'done';
+  if (item.url) URL.revokeObjectURL(item.url);
+  item.url = URL.createObjectURL(item.out);
+}
+
+/* ============================ files ============================ */
+async function add(list){
+  const room = MAX - items.length;
+  const incoming = [...list].filter(f => /image\/(png|jpeg|webp)/.test(f.type)).slice(0, Math.max(0, room));
+  if (!incoming.length){ Portal.done(); return; }
+  for (const f of incoming){
+    const item = {
+      id: ++seq, file: f, name: f.name, size: f.size, type: f.type, fresh: true,
+      quality: opts.quality, colors: opts.colors, target: opts.target,
+      out: null, outType: null, url: null, note: '', quality_db: null, state: 'idle', bitmap: null
+    };
+    try {
+      item.bitmap = await createImageBitmap(f);
+      item.src = URL.createObjectURL(f);
+      items.push(item);
+    } catch { /* unreadable, skip */ }
+  }
+  Portal.done();
+  render(); sync();
+  runAll();
+}
+
+async function runAll(){
+  if (busy) return;
+  busy = true; sync();
+  for (const it of items){
+    if (it.state === 'done') continue;
+    it.state = 'work'; patch(it); sync();
+    await new Promise(r => setTimeout(r, 16));
+    try { await encode(it); } catch (e){ it.state = 'error'; it.note = String(e.message || e); }
+    patch(it); sync();
+  }
+  busy = false; sync();
+}
+
+// re-encode a single item, debounced — this is what the inline sliders drive
+const pending = new Map();
+function requeue(it, delay = 380){
+  clearTimeout(pending.get(it.id));
+  pending.set(it.id, setTimeout(async () => {
+    it.state = 'work'; patch(it); sync();
+    try { await encode(it); } catch { it.state = 'error'; }
+    patch(it); sync();
+  }, delay));
+}
+
+function download(blob, filename){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const outName = it => stem(it.name) + '-min.' + extOf(it.outType || it.type);
+
+async function saveAll(){
+  const done = items.filter(i => i.state === 'done');
+  if (!done.length) return;
+  if (window.JSZip){
+    const zip = new JSZip();
+    for (const it of done) zip.file(outName(it), it.out);
+    download(await zip.generateAsync({ type: 'blob' }), 'pop-compressed.zip');
+  } else {
+    for (const it of done){ download(it.out, outName(it)); await new Promise(r => setTimeout(r, 320)); }
+  }
+}
+
+/* ============================ cards ============================ */
+const nodes = new Map();
+
+// what the inline slider controls depends on mode — one knob, right meaning
+function knobSpec(it){
+  if (opts.fmt !== 'auto') return { key:'quality', min:20, max:100, step:1, label:'Quality', fmt:v => v + '%' };
+  if (opts.mode === 'lossless') return null;
+  if (opts.mode === 'manual')   return { key:'colors', min:2, max:256, step:2, label:'Colors', fmt:v => v + '' };
+  return { key:'target', min:0, max:100, step:5, label:'Quality floor', fmt:v => gradeOf(dbOf(v)) };
+}
+
+function build(it){
+  const el = document.createElement('article');
+  el.className = 'card in';
+  el.dataset.id = it.id;
+  el.innerHTML = `
+    <button class="shot" data-open="${it.id}" title="Compare before and after">
+      <img alt="" loading="lazy" />
+      <span class="chip"></span>
+    </button>
+    <div class="meta">
+      <div class="top">
+        <div class="name"></div>
+        <div class="sizes"></div>
+      </div>
+      <div class="bar"><i></i></div>
+      <div class="knob">
+        <label></label>
+        <input type="range" />
+        <output></output>
+      </div>
+      <div class="row">
+        <button class="btn" data-open="${it.id}">Compare</button>
+        <button class="btn" data-save="${it.id}">Save</button>
+        <button class="btn ghost x" data-del="${it.id}" aria-label="Remove">×</button>
+      </div>
+    </div>`;
+
+  const slider = el.querySelector('.knob input');
+  slider.addEventListener('input', e => {
+    const spec = knobSpec(it); if (!spec) return;
+    it[spec.key] = +e.target.value;
+    el.querySelector('.knob output').textContent = spec.fmt(it[spec.key]);
+    requeue(it);
+  });
+  // don't let a slider drag start a card press animation
+  slider.addEventListener('pointerdown', e => e.stopPropagation());
+  nodes.set(it.id, el);
+  return el;
+}
+
+function patch(it){
+  const el = nodes.get(it.id); if (!el) return;
+  const done = it.state === 'done';
+  const img = el.querySelector('img');
+  const nextSrc = it.url || it.src;
+  if (img.dataset.src !== nextSrc){ img.dataset.src = nextSrc; img.src = nextSrc; }
+
+  el.classList.toggle('working', it.state === 'work');
+  el.classList.toggle('is-done', done);
+
+  const chip = el.querySelector('.chip');
+  chip.className = 'chip ' + (done ? (it.skipped ? '' : 'done') : it.state === 'work' ? 'work' : it.state === 'error' ? 'err' : '');
+  chip.innerHTML = done
+    ? (it.skipped ? 'already lean' : `<b>−${pctOf(it)}%</b>`)
+    : it.state === 'work' ? '<b>working</b>' : it.state === 'error' ? 'failed' : 'queued';
+
+  el.querySelector('.name').textContent = it.name;
+  el.querySelector('.name').title = it.name + (it.note ? ' · ' + it.note : '');
+  el.querySelector('.sizes').innerHTML = done
+    ? `<s>${kb(it.size)}</s><span>→</span><b>${kb(it.out.size)}</b>` +
+      (it.skipped ? '' : `<em>${kb(it.size - it.out.size)} off</em>`) +
+      (it.quality_db != null ? `<span class="q">${it.quality_db === Infinity ? 'lossless' : it.quality_db.toFixed(0) + ' dB'}</span>` : '')
+    : `<b>${kb(it.size)}</b>`;
+
+  const bar = el.querySelector('.bar');
+  bar.classList.toggle('idle', !done);
+  bar.querySelector('i').style.width = (done ? Math.max(2, Math.round(it.out.size / it.size * 100)) : 100) + '%';
+
+  const spec = knobSpec(it);
+  const knob = el.querySelector('.knob');
+  knob.hidden = !spec;
+  if (spec){
+    const input = knob.querySelector('input');
+    knob.querySelector('label').textContent = spec.label;
+    input.min = spec.min; input.max = spec.max; input.step = spec.step;
+    if (document.activeElement !== input) input.value = it[spec.key];
+    knob.querySelector('output').textContent = spec.fmt(it[spec.key]);
+  }
+  el.querySelector('[data-save]').disabled = !done;
+}
+
+function render(){
+  const grid = $('grid');
+  const has = items.length > 0;
+  $('empty').hidden = has;
+  grid.hidden = !has;
+  grid.className = view;
+
+  const seen = new Set();
+  items.forEach((it, i) => {
+    let el = nodes.get(it.id);
+    if (!el){
+      el = build(it);
+      el.style.animationDelay = Math.min(i * 45, 400) + 'ms';
+    }
+    if (el.parentNode !== grid || grid.children[i] !== el) grid.appendChild(el);
+    seen.add(it.id);
+    patch(it);
+  });
+  for (const [id, el] of nodes) if (!seen.has(id)){ el.remove(); nodes.delete(id); }
+}
+
+function sync(){
+  const before = items.reduce((s, i) => s + i.size, 0);
+  const after  = items.reduce((s, i) => s + (i.state === 'done' ? i.out.size : i.size), 0);
+  const saved  = before ? Math.max(0, Math.round((1 - after / before) * 100)) : 0;
+  const done   = items.filter(i => i.state === 'done').length;
+  const left   = items.length - done;
+
+  $('tSaved').textContent = saved + '%';
+  $('tBefore').textContent = kb(before);
+  $('tAfter').textContent = kb(after);
+  $('tDelta').textContent = before > after ? '· ' + kb(before - after) + ' saved' : '';
+  $('tTrack').style.width = saved + '%';
+  $('tCount').textContent = !items.length ? 'no files yet'
+    : busy ? `working · ${done}/${items.length}`
+    : left ? `${done}/${items.length} compressed`
+    : `${items.length} file${items.length > 1 ? 's' : ''} done`;
+
+  $('runN').textContent = left;
+  $('saveN').textContent = done;
+  $('run').disabled = busy || !left;
+  $('saveAll').disabled = busy || !done;
+  $('clear').disabled = busy || !items.length;
+
+  const png = opts.fmt === 'auto';
+  $('ctlTarget').hidden = !(png && opts.mode === 'auto');
+  $('ctlColors').hidden = !(png && opts.mode === 'manual');
+  $('ctlDither').hidden = !(png && opts.mode === 'manual');
+  $('ctlQuality').hidden = png;
+  $('modeWrap').hidden = !png;
+  $('modeNote').textContent =
+    !png ? 'Re-encoded as ' + (opts.fmt === 'image/webp' ? 'WebP' : 'JPEG') + ' — lossy by nature.'
+    : opts.mode === 'lossless' ? 'Pixel-for-pixel identical. Savings come from filtering, not colour loss.'
+    : opts.mode === 'auto' ? 'Picks the smallest palette that clears your floor, else stays lossless.'
+    : 'You set the palette. Watch the dB readout on each tile.';
+}
+
+function invalidate(all = true){
+  for (const it of items){
+    if (it.url) URL.revokeObjectURL(it.url);
+    it.url = null; it.out = null; it.state = 'idle';
+    it.skipped = false; it.note = ''; it.quality_db = null;
+  }
+  render(); sync();
+  if (all) runAll();
+}
+
+/* ============================ inspector ============================ */
+function open(id){
+  const it = items.find(i => i.id === id);
+  if (!it) return;
+  current = it;
+  $('iName').textContent = it.name;
+  $('iDims').textContent = `${it.bitmap.width} × ${it.bitmap.height}${it.note ? ' · ' + it.note : ''}`;
+  $('iBefore').src = it.src;
+  $('iAfter').src = it.url || it.src;
+  $('iSizes').innerHTML = it.state === 'done'
+    ? `<s>${kb(it.size)}</s><span>→</span><b>${kb(it.out.size)}</b><em>−${pctOf(it)}%</em>`
+    : `<b>${kb(it.size)}</b>`;
+  $('iSave').disabled = it.state !== 'done';
+
+  const spec = knobSpec(it);
+  $('iKnob').hidden = !spec;
+  if (spec){
+    $('iLabel').textContent = spec.label;
+    const s = $('is');
+    s.min = spec.min; s.max = spec.max; s.step = spec.step; s.value = it[spec.key];
+    $('isOut').textContent = spec.fmt(it[spec.key]);
+  }
+  setSplit(50);
+
+  // ease the panel out of the tile that was clicked
+  const sheet = $('sheet'), panel = $('panel');
+  sheet.classList.add('open');
+  const tile = (nodes.get(id) || {}).querySelector ? nodes.get(id).querySelector('.shot') : null;
+  if (tile && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const a = tile.getBoundingClientRect(), b = panel.getBoundingClientRect();
+    panel.animate([
+      { transformOrigin:'top left', opacity:0,
+        transform:`translate(${a.left - b.left}px,${a.top - b.top}px) scale(${a.width / b.width},${a.height / b.height})` },
+      { transformOrigin:'top left', opacity:1, transform:'none' }
+    ], { duration:320, easing:'cubic-bezier(.22,.85,.2,1)' });
+  }
+}
+function close(){
+  const sheet = $('sheet'), panel = $('panel');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches){ sheet.classList.remove('open'); current = null; return; }
+  const anim = panel.animate(
+    [{ opacity:1, transform:'none' }, { opacity:0, transform:'scale(.965) translateY(6px)' }],
+    { duration:180, easing:'cubic-bezier(.4,0,1,1)' });
+  anim.onfinish = () => { sheet.classList.remove('open'); current = null; };
+}
+
+function setSplit(pct){
+  pct = clamp(pct, 0, 100);
+  $('handle').style.left = pct + '%';
+  $('afterWrap').style.width = pct + '%';
+  $('iAfter').style.width = $('stack').clientWidth + 'px';
+}
+let dragging = false;
+const trackSplit = e => {
+  const r = $('stack').getBoundingClientRect();
+  setSplit(((e.clientX - r.left) / r.width) * 100);
+};
+$('compare').addEventListener('pointerdown', e => { dragging = true; trackSplit(e); });
+addEventListener('pointermove', e => { if (dragging) trackSplit(e); });
+addEventListener('pointerup', () => { dragging = false; });
+$('iBefore').addEventListener('load', () => setSplit(50));
+addEventListener('resize', () => { if (current) setSplit(parseFloat($('handle').style.left) || 50); });
+
+$('is').addEventListener('input', e => {
+  if (!current) return;
+  const spec = knobSpec(current); if (!spec) return;
+  current[spec.key] = +e.target.value;
+  $('isOut').textContent = spec.fmt(current[spec.key]);
+  requeue(current, 420);
+});
+
+/* ============================ events ============================ */
+$('pick').onclick = $('pick2').onclick = () => $('file').click();
+$('file').onchange = e => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  const b = $('main').getBoundingClientRect();
+  animateIn(files, b.left + b.width / 2, b.top + b.height / 2);
+};
+$('run').onclick = runAll;
+$('saveAll').onclick = saveAll;
+$('clear').onclick = () => {
+  for (const it of items){ it.url && URL.revokeObjectURL(it.url); URL.revokeObjectURL(it.src); }
+  items = []; render(); sync();
+};
+
+function animateIn(files, x, y){
+  const urls = files.slice(0, 10).map(f => URL.createObjectURL(f));
+  Portal.swallow(urls, x, y);
+  setTimeout(() => urls.forEach(u => URL.revokeObjectURL(u)), 6000);
+  add(files);
+}
+
+$('grid').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.open) open(+b.dataset.open);
+  if (b.dataset.save){ const it = items.find(i => i.id === +b.dataset.save); if (it && it.out) download(it.out, outName(it)); }
+  if (b.dataset.del){
+    const id = +b.dataset.del;
+    const el = nodes.get(id);
+    const drop = () => {
+      const i = items.findIndex(x => x.id === id);
+      if (i > -1){ items[i].url && URL.revokeObjectURL(items[i].url); URL.revokeObjectURL(items[i].src); items.splice(i, 1); }
+      render(); sync();
+    };
+    if (el && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+      el.animate([{ opacity:1, transform:'none' }, { opacity:0, transform:'scale(.92)' }],
+        { duration:170, easing:'ease-in' }).onfinish = drop;
+    } else drop();
+  }
+});
+
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  opts.fmt = b.dataset.fmt; invalidate();
+});
+document.querySelectorAll('.views button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.views button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  view = b.dataset.view;
+  $('grid').className = view;
+});
+document.querySelectorAll('.modes button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.modes button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  opts.mode = b.dataset.mode;
+  sync(); invalidate();
+});
+
+const live = (id, key, out, fmt) => {
+  $(id).oninput = e => {
+    opts[key] = +e.target.value;
+    $(out).textContent = fmt(opts[key]);
+    items.forEach(i => { if (key in i) i[key] = opts[key]; });
+    items.forEach(i => patch(i));
+  };
+  $(id).onchange = () => invalidate();
+};
+live('target', 'target', 'targetOut', v => gradeOf(dbOf(v)));
+live('colors', 'colors', 'colorsOut', v => v + '');
+live('quality', 'quality', 'qualityOut', v => v + '%');
+$('dither').oninput = e => { opts.dither = +e.target.value; $('ditherOut').textContent = opts.dither ? opts.dither + '%' : 'off'; };
+$('dither').onchange = () => invalidate();
+$('maxw').onchange = e => { opts.maxw = +e.target.value; invalidate(); };
+
+$('iSave').onclick = () => { if (current && current.out) download(current.out, outName(current)); };
+$('iClose').onclick = close;
+$('sheet').addEventListener('click', e => { if (e.target === $('sheet')) close(); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && $('sheet').classList.contains('open')) close(); });
+
+/* ---- drag & drop feeds the portal ---- */
+let depth = 0;
+addEventListener('dragenter', e => { e.preventDefault(); depth++; document.body.classList.add('dragging'); Portal.hover(e.clientX, e.clientY); });
+addEventListener('dragover',  e => { e.preventDefault(); Portal.hover(e.clientX, e.clientY); });
+addEventListener('dragleave', () => { if (--depth <= 0){ document.body.classList.remove('dragging'); Portal.leave(); } });
+addEventListener('drop', e => {
+  e.preventDefault(); depth = 0;
+  document.body.classList.remove('dragging');
+  const files = [...((e.dataTransfer && e.dataTransfer.files) || [])];
+  if (!files.length){ Portal.leave(); return; }
+  animateIn(files, e.clientX, e.clientY);
+});
+addEventListener('paste', e => {
+  const files = [...((e.clipboardData && e.clipboardData.files) || [])];
+  if (!files.length) return;
+  const b = $('main').getBoundingClientRect();
+  animateIn(files, b.left + b.width / 2, b.top + b.height / 2);
+});
+
+if (!CAN_DEFLATE) $('warn').hidden = false;
+render(); sync();
+</script>
+</body>
+</html>

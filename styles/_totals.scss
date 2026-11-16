@@ -1,0 +1,35 @@
+@use 'variables' as *;
+
+/* ───────────── savings header ───────────── */
+.totals{
+  flex:0 0 auto;display:flex;align-items:center;gap:24px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line);
+
+  @include mobile{ padding:8px 12px;gap:16px; }
+}
+
+.big{
+  display:flex;align-items:baseline;gap:8px;min-width:132px;
+
+  b{
+    font-family:var(--mono);font-weight:700;font-size:32px;line-height:1;letter-spacing:-.03em;color:var(--accent);font-variant-numeric:tabular-nums;
+    @include mobile{ font-size:26px; }
+  }
+  i{font-style:normal;@include label-caps(11px);max-width:58px}
+}
+
+.flow{
+  display:flex;flex-direction:column;gap:8px;flex:1;min-width:210px;
+
+  .nums{
+    display:flex;align-items:baseline;gap:8px;font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;
+    b{color:var(--text);font-weight:500}
+    u{text-decoration:none;color:var(--accent)}
+    .count-txt{margin-left:auto}
+  }
+}
+
+.track{
+  position:relative;height:6px;border-radius:var(--r-sm);background:var(--raised);overflow:hidden;border:1px solid var(--line);
+  i{position:absolute;inset:0 auto 0 0;background:var(--accent);width:0;transition:width var(--t-slow) var(--ease-io)}
+  u{position:absolute;top:0;bottom:0;width:1px;background:var(--bg);opacity:.55}
+}

@@ -1,0 +1,67 @@
+@use 'sass:color';
+
+/* ── the one accent. change this line, the whole tool follows ── */
+$accent: #3d7bfa;
+$accent-hover: #5a8ffb;
+$accent-ink: #ffffff;
+
+/* dark palette (default — this tool ships dark only) */
+$bg: #0e0e11;        // page
+$surface: #141418;   // panels, cards, header
+$raised: #1b1b20;    // inputs, chips, hover fills
+$raised-hover: #222228;
+$line: #26262c;      // 1px borders everywhere
+$line-strong: #33333b; // hover border on cards
+$text: #f2f2f4;
+$muted: #8c8c96;
+$dim: #5f5f69;       // tertiary hints
+$red: #f25757;
+
+/* radius */
+$radius-sm: 6px;   // chips, badges, small buttons, inputs
+$radius: 10px;     // default: buttons, panels, cards, dropdowns
+$radius-lg: 14px;  // modals, big cards
+
+/* elevation — floating surfaces only */
+$shadow-panel: 0 8px 24px rgba(0,0,0,.35);
+$focus-ring: 0 0 0 2px rgba(255,255,255,.12);
+
+/* motion — quiet, no overshoot */
+$ease: ease;
+$ease-io: ease-in-out;
+$t-fast: 150ms;    // hover / color
+$t-mid: 200ms;     // toggles, segmented, small reveals
+$t-slow: 320ms;    // panels, drawers
+
+$bp-mobile: 760px;
+
+@function accent-a($alpha){ @return color.change($accent, $alpha: $alpha); }
+@function red-a($alpha){ @return color.change($red, $alpha: $alpha); }
+
+// tiny mono caps used for numeric/technical readouts
+@mixin mono-caps($size, $spacing){
+  font-family: var(--mono);
+  font-size: $size;
+  letter-spacing: $spacing;
+  text-transform: uppercase;
+}
+
+// section / group label: uppercase, semibold, slightly tracked, muted
+@mixin label-caps($size: 11px){
+  font-family: var(--ui);
+  font-size: $size;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+// transparency checkerboard behind image previews
+@mixin checker($cell){
+  background: conic-gradient(from 90deg at 50% 50%,#1b1b20 25%,#141418 0 50%,#1b1b20 0 75%,#141418 0);
+  background-size: $cell $cell;
+}
+
+@mixin mobile{
+  @media (max-width: $bp-mobile){ @content; }
+}
