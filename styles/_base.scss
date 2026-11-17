@@ -7,6 +7,18 @@
   --accent-ink: #{$accent-ink};
   --accent-15: #{accent-a(.15)};
   --accent-30: #{accent-a(.32)};
+  --accent-warm: #{$accent-warm};
+  --accent-warm-glow: #ffa58273;
+  --accent-warm-wash: #ffa58229;
+  --grad-premium: #{$grad-premium};
+  --grad-chrome: #{$grad-chrome};
+  --shadow-card: #{$shadow-card};
+  --rim: #{$rim};
+  --sheen: #{$sheen};
+  --glass: #{$glass};
+  --glass-blur: #{$glass-blur};
+  --aurora: radial-gradient(120% 90% at 0% 0%, #feeae111, transparent 55%),
+            radial-gradient(120% 90% at 100% 100%, #c0cef20f, transparent 60%);
 
   --bg: #{$bg}; --surface: #{$surface}; --raised: #{$raised}; --raised-hover: #{$raised-hover};
   --line: #{$line}; --line-strong: #{$line-strong};
@@ -18,7 +30,9 @@
   --ease-io: #{$ease-io};
   --t-fast: #{$t-fast}; --t-mid: #{$t-mid}; --t-slow: #{$t-slow};
   --mono: var(--font-mono),ui-monospace,SFMono-Regular,Menlo,monospace;
-  --ui: var(--font-ui),system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ui: var(--font-ui),"General Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --heading: "General Sans",var(--font-ui),system-ui,sans-serif;
+  --serif: var(--font-serif),"Instrument Serif",Georgia,serif;
 }
 
 *{box-sizing:border-box}

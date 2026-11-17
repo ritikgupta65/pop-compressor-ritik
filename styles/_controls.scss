@@ -1,41 +1,50 @@
 @use 'variables' as *;
 
-/* ───────────── controls ───────────── */
-.strip{
-  display:flex;align-items:center;gap:16px;flex-wrap:wrap;flex:0 0 auto;padding:8px 16px;
-  border-bottom:1px solid var(--line);background:var(--surface);
+/* ───────────── controls (stacked in the right pane) ───────────── */
+.strip{display:flex;flex-direction:column;gap:20px}
 
-  @include mobile{
-    gap:12px;padding:8px 12px;overflow-x:auto;
-    .hint{display:none}
+/* inline control (inspector footer) */
+.ctl{
+  display:flex;align-items:center;gap:8px;
+  label{@include label-caps(11px)}
+  output{font-family:var(--mono);font-size:12px;min-width:96px;color:var(--accent);font-variant-numeric:tabular-nums}
+}
+
+/* stacked control in the right pane */
+.control-pane .ctl{
+  display:flex;flex-direction:column;align-items:stretch;gap:10px;
+
+  label{@include label-caps(11px);letter-spacing:.1em;color:var(--dim)}
+  .seg{align-self:flex-start;max-width:100%}
+  input[type=range]{width:100%}
+  output{font-family:var(--mono);font-size:12px;min-width:0;color:var(--accent);font-variant-numeric:tabular-nums}
+
+  /* slider + readout share a row */
+  &:has(input[type=range]){
+    display:grid;grid-template-columns:1fr auto;align-items:center;row-gap:10px;column-gap:12px;
+    label{grid-column:1 / -1}
   }
 }
 
-.ctl{
-  display:flex;align-items:center;gap:8px;
-
-  label{@include label-caps(11px)}
-  output{font-family:var(--mono);font-size:12px;min-width:96px;color:var(--accent);font-variant-numeric:tabular-nums}
-  &.narrow output{min-width:40px;text-align:right}
-}
+.note{margin:0;line-height:1.5;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:#ffffff05}
 
 input[type=range]{
-  -webkit-appearance:none;appearance:none;width:112px;height:2px;background:var(--line);border-radius:2px;cursor:pointer;
+  -webkit-appearance:none;appearance:none;width:112px;height:2px;background:#ffffff29;border-radius:2px;cursor:pointer;
 
-  &::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border:0;border-radius:50%;background:var(--accent);transition:transform var(--t-fast) var(--ease)}
+  &::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border:0;border-radius:50%;background:#f4f5f8;box-shadow:0 0 0 3px var(--accent-30);transition:transform var(--t-fast) var(--ease)}
   &:active::-webkit-slider-thumb{transform:scale(1.2)}
-  &::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:var(--accent)}
+  &::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:#f4f5f8;box-shadow:0 0 0 3px var(--accent-30)}
   &:focus-visible{box-shadow:none}
   &:focus-visible::-webkit-slider-thumb{box-shadow:var(--focus-ring)}
   &:focus-visible::-moz-range-thumb{box-shadow:var(--focus-ring)}
 }
 
 select{
-  background:var(--raised);color:var(--text);border:1px solid var(--line);border-radius:var(--r-sm);
-  padding:4px 8px;font-family:var(--ui);font-size:12px;
+  background:var(--raised);color:var(--text);border:1px solid var(--line);border-radius:999px;
+  padding:8px 14px;font-family:var(--ui);font-size:12.5px;
   transition:border-color var(--t-fast) var(--ease);
   &:hover{border-color:var(--line-strong)}
-  &:focus-visible{border-color:var(--accent);box-shadow:var(--focus-ring)}
+  &:focus-visible{border-color:var(--line-strong);box-shadow:var(--focus-ring)}
 }
 
 .warn{flex:0 0 auto;padding:8px 16px;background:red-a(.09);border-bottom:1px solid red-a(.25);font-size:12px;color:var(--red)}

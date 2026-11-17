@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useReducer, useRef, useState } from 'react';
 import Header from './Header';
-import ControlStrip from './ControlStrip';
+import ControlPane from './ControlPane';
+import InputPane from './InputPane';
 import Totals from './Totals';
-import EmptyState from './EmptyState';
 import Card from './Card';
 import Inspector from './Inspector';
 import { createPortal } from '@/lib/portal';
@@ -209,15 +209,7 @@ export default function Compressor() {
     <>
       <canvas id="fx" ref={fx} aria-hidden="true"></canvas>
 
-      <Header
-        fmt={o.fmt} view={view} busy={busy.current} left={left} done={done} total={list.length}
-        onFormat={f => { o.fmt = f; invalidate(); }}
-        onView={setView}
-        onPick={pick}
-        onClear={clear}
-        onRun={runAll}
-        onSaveAll={saveAll}
-      />
+      <Header />
       <input type="file" ref={fileInput} accept="image/png,image/jpeg,image/webp" multiple hidden
         onChange={e => {
           const files = [...e.target.files];
@@ -227,38 +219,65 @@ export default function Compressor() {
 
       <div className="warn" hidden={!noDeflate}>This browser has no CompressionStream, so PNGs fall back to plain re-encoding and will save far less. Chrome, Edge, Safari 16.4+ or Firefox 113+ get the full encoder.</div>
 
-      <ControlStrip
-        opts={o}
-        onMode={m => { o.mode = m; invalidate(); }}
-        onLive={(key, v) => {
-          o[key] = v;
-          list.forEach(i => { if (key in i) i[key] = v; });
-          refresh();
-        }}
-        onDither={v => { o.dither = v; refresh(); }}
-        onCommit={() => invalidate()}
-        onMaxWidth={v => { o.maxw = v; invalidate(); }}
-      />
+      <div className="layout">
+        <InputPane
+          items={list} busy={busy.current}
+          onPick={pick} onClear={clear} onOpen={open} onDelete={remove}
+        />
 
-      <Totals items={list} busy={busy.current} />
+        <section className="pane result-pane" aria-label="Result">
+          <div className="pane-head">
+            <h2 className="pane-title">Image Compressor</h2>
+            <div className="seg views" role="group" aria-label="Layout">
+              <button aria-pressed={String(view === 'grid')} title="Grid view" aria-label="Grid view" onClick={() => setView('grid')}>
+                <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+              </button>
+              <button aria-pressed={String(view === 'list')} title="List view" aria-label="List view" onClick={() => setView('list')}>
+                <svg viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="3" rx="1"/><rect x="1" y="6.5" width="14" height="3" rx="1"/><rect x="1" y="11" width="14" height="3" rx="1"/></svg>
+              </button>
+            </div>
+          </div>
 
-      <main ref={main}>
-        <EmptyState hidden={list.length > 0} onPick={pick} />
-        <div id="grid" className={view} hidden={!list.length}>
-          {list.map(it => (
-            <Card
-              key={it.id}
-              it={it}
-              spec={spec}
-              shotRef={el => { if (el) tiles.current.set(it.id, el); else tiles.current.delete(it.id); }}
-              onOpen={open}
-              onSave={x => { if (x.out) download(x.out, outName(x)); }}
-              onDelete={remove}
-              onKnob={(x, v) => { if (!spec) return; x[spec.key] = v; refresh(); requeue(x); }}
-            />
-          ))}
-        </div>
-      </main>
+          <Totals items={list} busy={busy.current} />
+
+          <main ref={main}>
+            <div className="placeholder" hidden={list.length > 0}>
+              <p>Compressed images show up here.</p>
+            </div>
+            <div id="grid" className={view} hidden={!list.length}>
+              {list.map(it => (
+                <Card
+                  key={it.id}
+                  it={it}
+                  spec={spec}
+                  shotRef={el => { if (el) tiles.current.set(it.id, el); else tiles.current.delete(it.id); }}
+                  onOpen={open}
+                  onSave={x => { if (x.out) download(x.out, outName(x)); }}
+                  onDelete={remove}
+                  onKnob={(x, v) => { if (!spec) return; x[spec.key] = v; refresh(); requeue(x); }}
+                />
+              ))}
+            </div>
+          </main>
+
+          <button className="btn primary save-all" disabled={busy.current || !done} onClick={saveAll}>↓ Save all<span className="count">{done}</span></button>
+        </section>
+
+        <ControlPane
+          opts={o} busy={busy.current} left={left}
+          onFormat={f => { o.fmt = f; invalidate(); }}
+          onRun={runAll}
+          onMode={m => { o.mode = m; invalidate(); }}
+          onLive={(key, v) => {
+            o[key] = v;
+            list.forEach(i => { if (key in i) i[key] = v; });
+            refresh();
+          }}
+          onDither={v => { o.dither = v; refresh(); }}
+          onCommit={() => invalidate()}
+          onMaxWidth={v => { o.maxw = v; invalidate(); }}
+        />
+      </div>
 
       <Inspector
         session={inspect}

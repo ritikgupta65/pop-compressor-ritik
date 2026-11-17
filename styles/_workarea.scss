@@ -1,25 +1,27 @@
 @use 'variables' as *;
 
-/* ───────────── work area ───────────── */
+/* ───────────── work area (result pane body) ───────────── */
 main{
   flex:1 1 auto;min-height:0;overflow:auto;position:relative;display:flex;flex-direction:column;padding:16px;
   @include mobile{ padding:12px; }
 }
 
+/* drop zone in the input pane */
 .empty{
-  flex:1 1 auto;display:grid;place-content:center;justify-items:center;text-align:center;
-  border:1px dashed var(--line);border-radius:var(--r-lg);padding:32px 24px;gap:12px;
+  display:grid;justify-items:center;text-align:center;
+  border:1px dashed var(--line-strong);border-radius:18px;padding:28px 16px;gap:12px;
   transition:border-color var(--t-mid) var(--ease),background var(--t-mid) var(--ease);
-  background:radial-gradient(ellipse at 50% 0%,accent-a(.05),transparent 62%);
+  background:radial-gradient(ellipse at 50% 0%,accent-a(.08),transparent 70%),#ffffff03;
 
   h1{
-    margin:0;font-size:clamp(19px,3.2vw,28px);font-weight:600;letter-spacing:-.02em;max-width:16ch;line-height:1.2;
-    em{font-style:normal;color:var(--accent)}
+    margin:0;font-family:var(--serif);font-style:italic;font-weight:400;font-size:26px;letter-spacing:-.01em;line-height:1.1;
+    em{font-style:italic;color:var(--accent)}
   }
-  p{margin:0;color:var(--muted);max-width:48ch}
+  p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.5}
+  &.compact{padding:16px 12px;gap:8px; h1{font-size:20px} }
 }
 
 body.dragging{
-  .empty{border-color:var(--accent-30);background:radial-gradient(ellipse at 50% 40%,accent-a(.07),transparent 70%)}
-  main{outline:1px dashed var(--accent-30);outline-offset:-6px;border-radius:var(--r-lg)}
+  .empty{border-color:var(--accent);background:radial-gradient(ellipse at 50% 40%,accent-a(.16),transparent 75%)}
+  .result-pane main{outline:1px dashed var(--accent-30);outline-offset:-8px;border-radius:var(--r-lg)}
 }

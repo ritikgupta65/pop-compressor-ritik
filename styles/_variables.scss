@@ -1,30 +1,40 @@
 @use 'sass:color';
 
 /* ── the one accent. change this line, the whole tool follows ── */
-$accent: #3d7bfa;
-$accent-hover: #5a8ffb;
+$accent: #5574f5;        // pop blue — active pills, primary buttons, readouts
+$accent-hover: #6b87f7;
 $accent-ink: #ffffff;
+$accent-warm: #ffa582;   // peach — glow / hover warmth
+
+/* premium chrome gradients (theme.css) */
+$grad-premium: linear-gradient(90deg, #bcc0ca -1.05%, #feeae1 41.74%, #c0cef2 102.46%);
+$grad-chrome: linear-gradient(150deg, #e8eaef 0%, #bcc0ca 52%, #e8eaef 100%);
 
 /* dark palette (default — this tool ships dark only) */
-$bg: #0e0e11;        // page
-$surface: #141418;   // panels, cards, header
-$raised: #1b1b20;    // inputs, chips, hover fills
-$raised-hover: #222228;
-$line: #26262c;      // 1px borders everywhere
-$line-strong: #33333b; // hover border on cards
-$text: #f2f2f4;
-$muted: #8c8c96;
-$dim: #5f5f69;       // tertiary hints
-$red: #f25757;
+$bg: #050505;        // page
+$surface: #0f0f10;   // panels, cards, header
+$raised: #141414;    // inputs, chips, hover fills
+$raised-hover: #1b1b1b;
+$line: #ffffff14;    // 1px borders everywhere
+$line-strong: #ffffff29; // hover border on cards
+$text: #f5f5f5;
+$muted: #a6a6a6;
+$dim: #868686;       // tertiary hints
+$red: #ff7676;
 
 /* radius */
-$radius-sm: 6px;   // chips, badges, small buttons, inputs
-$radius: 10px;     // default: buttons, panels, cards, dropdowns
-$radius-lg: 14px;  // modals, big cards
+$radius-sm: 8px;   // chips, badges, small buttons, inputs
+$radius: 12px;     // default: buttons, panels, cards, dropdowns
+$radius-lg: 24px;  // modals, big cards
 
 /* elevation — floating surfaces only */
-$shadow-panel: 0 8px 24px rgba(0,0,0,.35);
-$focus-ring: 0 0 0 2px rgba(255,255,255,.12);
+$shadow-panel: 0 8px 48px rgba(0,0,0,.6);
+$shadow-card: 0 4px 32px rgba(0,0,0,.5);
+$rim: inset 0 1px 0 0 #ffffff0f;
+$sheen: linear-gradient(180deg, #ffffff09 0%, #fff0 45%);
+$glass: #0c0c0c80;
+$glass-blur: blur(26px) saturate(1.35);
+$focus-ring: 0 0 0 1px #e8eaef9e;
 
 /* motion — quiet, no overshoot */
 $ease: ease;
@@ -58,8 +68,17 @@ $bp-mobile: 760px;
 
 // transparency checkerboard behind image previews
 @mixin checker($cell){
-  background: conic-gradient(from 90deg at 50% 50%,#1b1b20 25%,#141418 0 50%,#1b1b20 0 75%,#141418 0);
+  background: conic-gradient(from 90deg at 50% 50%,#141414 25%,#0d0d0d 0 50%,#141414 0 75%,#0d0d0d 0);
   background-size: $cell $cell;
+}
+
+// gradient-filled text
+@mixin grad-text($grad){
+  background: $grad;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 @mixin mobile{

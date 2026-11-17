@@ -9,12 +9,12 @@
 #grid.list{display:flex;flex-direction:column;gap:8px}
 
 .card{
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
-  display:flex;flex-direction:column;
-  transition:border-color var(--t-fast) var(--ease);
+  background:var(--sheen),#ffffff07;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  display:flex;flex-direction:column;box-shadow:var(--rim),var(--shadow-card);
+  transition:border-color var(--t-fast) var(--ease),box-shadow var(--t-mid) var(--ease);
 
   &.in{animation:pop var(--t-mid) ease-out both}
-  &:hover{border-color:var(--line-strong)}
+  &:hover{border-color:var(--line-strong);box-shadow:var(--rim),var(--shadow-card),0 0 40px var(--accent-warm-wash)}
   &.working{border-color:var(--accent-30)}
 }
 @keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
@@ -33,7 +33,7 @@
   position:absolute;top:8px;right:8px;padding:2px 8px;border-radius:999px;line-height:16px;
   font-variant-numeric:tabular-nums;
   @include mono-caps(10px, .06em);
-  background:rgba(14,14,17,.82);border:1px solid var(--line);color:var(--muted);
+  background:rgba(12,12,12,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);color:var(--muted);
   animation:chipIn var(--t-mid) var(--ease) both;
 
   &.done{
@@ -65,7 +65,7 @@
 }
 
 .bar{
-  height:4px;border-radius:999px;background:var(--raised);overflow:hidden;
+  height:4px;border-radius:999px;background:#ffffff0d;overflow:hidden;
   i{display:block;height:100%;width:100%;background:var(--accent);transition:width var(--t-slow) var(--ease-io)}
   &.idle i{background:var(--line)}
 }
@@ -83,7 +83,7 @@
 
 .row{
   display:flex;gap:4px;margin-top:auto;
-  .btn{flex:1;padding:4px 8px;font-size:12px;border-radius:var(--r-sm)}
+  .btn{flex:1;padding:5px 8px;font-size:12px}
   .btn.x{flex:0 0 28px;padding:4px 0;font-size:15px;line-height:16px}
 }
 

@@ -1,66 +1,58 @@
 @use 'variables' as *;
 
-/* ───────────── header ───────────── */
-header{
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:0 0 auto;padding:12px 16px;
-  border-bottom:1px solid var(--line);background:var(--surface);
+/* ───────────── top bar: logo only ───────────── */
+.topbar{
+  flex:0 0 auto;display:grid;place-items:center;height:84px;
+  border-bottom:1px solid var(--line);background:var(--bg);
 
-  @include mobile{ padding:8px 12px;gap:8px; }
+  .logo{height:44px;width:auto;display:block;user-select:none;-webkit-user-drag:none}
+
+  @include mobile{ height:64px; .logo{height:30px} }
 }
 
-.brand{
-  display:flex;align-items:baseline;gap:8px;margin-right:auto;
-
-  b{
-    font-weight:700;font-size:15px;letter-spacing:-.01em;
-    em{font-style:normal;color:var(--accent)}
-  }
-  span{@include label-caps(11px)}
-
-  @include mobile{ width:100%;margin-right:0; }
-}
-
-/* segmented control */
+/* segmented control — pill track, blue active pill */
 .seg{
-  display:flex;gap:2px;background:var(--raised);border:1px solid var(--line);border-radius:var(--r);padding:2px;
+  display:flex;gap:2px;background:#ffffff08;border:1px solid var(--line);border-radius:999px;padding:4px;
 
   button{
-    background:transparent;border:0;padding:4px 12px;border-radius:var(--r-sm);color:var(--muted);
-    font-size:12px;font-weight:500;line-height:20px;
+    background:transparent;border:0;padding:6px 14px;border-radius:999px;color:var(--muted);
+    font-size:12.5px;font-weight:500;line-height:18px;text-transform:capitalize;
     transition:background-color var(--t-mid) var(--ease-io),color var(--t-fast) var(--ease),box-shadow var(--t-mid) var(--ease-io);
 
     &:hover{color:var(--text)}
-    &[aria-pressed=true]{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.35)}
+    &[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);box-shadow:0 2px 10px accent-a(.35)}
   }
 
   &.views{
-    button{padding:4px 8px;display:grid;place-items:center}
+    button{padding:6px 10px;display:grid;place-items:center}
     svg{width:14px;height:14px;display:block;fill:currentColor}
   }
 }
 
 /* buttons — default = secondary */
 .btn{
-  border:1px solid var(--line);background:var(--raised);color:var(--text);border-radius:var(--r);padding:8px 12px;
+  border:1px solid var(--line);background:#ffffff0a;color:var(--text);border-radius:999px;padding:8px 16px;
   font-family:var(--ui);font-size:12.5px;font-weight:500;line-height:16px;
   white-space:nowrap;
-  transition:background-color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
+  transition:background-color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
 
-  &:hover:not(:disabled){background:var(--raised-hover)}
-  &:disabled{opacity:.5;cursor:not-allowed}
+  &:hover:not(:disabled){background:#ffffff14;border-color:var(--line-strong)}
+  &:disabled{opacity:.45;cursor:not-allowed}
 
   &.primary{
-    background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;
-    &:hover:not(:disabled){background:var(--accent-hover);border-color:var(--accent-hover)}
+    background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600;
+    box-shadow:0 2px 12px accent-a(.3);
+    &:hover:not(:disabled){background:var(--accent-hover);border-color:transparent;transform:translateY(-1px);box-shadow:0 6px 20px accent-a(.4)}
   }
   &.ghost{
     background:transparent;border-color:transparent;color:var(--muted);
-    &:hover:not(:disabled){background:var(--raised);color:var(--text)}
+    &:hover:not(:disabled){background:#ffffff0d;border-color:transparent;color:var(--text)}
   }
+  &.wide{width:100%;padding:12px 16px;font-size:13.5px}
 }
 
 .count{
-  display:inline-block;margin-left:8px;padding:0 6px;border-radius:var(--r-sm);
-  background:rgba(255,255,255,.2);font-weight:600;font-variant-numeric:tabular-nums;
+  display:inline-block;margin-left:8px;padding:0 6px;border-radius:999px;
+  background:rgba(255,255,255,.22);font-weight:600;font-variant-numeric:tabular-nums;
 }
 .btn:not(.primary) .count{background:var(--line)}

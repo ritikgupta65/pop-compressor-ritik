@@ -52,7 +52,7 @@ export default function ControlStrip({ opts, onMode, onLive, onDither, onCommit,
           <option value="800">800 px</option>
         </select>
       </div>
-      <span className="hint" style={{ marginLeft: 'auto' }}>{note}</span>
+      <p className="hint note">{note}</p>
     </div>
   );
 }
