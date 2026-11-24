@@ -3,7 +3,7 @@
 /* ───────────── top bar: logo only ───────────── */
 .topbar{
   flex:0 0 auto;display:grid;place-items:center;height:74px;
-  border-bottom:1px solid var(--line);background:var(--bg);
+  // border-bottom:1px solid var(--line);background:var(--bg);
 
   .logo{height:44px;width:auto;display:block;user-select:none;-webkit-user-drag:none}
 
